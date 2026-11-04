@@ -1,5 +1,6 @@
-﻿const express = require('express');
+const express = require('express');
 const { execFile } = require('child_process');
+const escapeHtml = require('escape-html');
 const _ = require('lodash');
 
 const app = express();
@@ -7,15 +8,6 @@ const hostnamePattern = /^(?=.{1,253}$)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-
 
 app.set('query parser', 'extended');
 
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (character) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  })[character]);
-}
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
