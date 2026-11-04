@@ -1,4 +1,4 @@
-﻿const request = require('supertest');
+const request = require('supertest');
 const app = require('../src/app');
 
 test('should escape HTML in /hello', async () => {
@@ -18,8 +18,9 @@ test('should reject shell commands in /ping host', async () => {
 });
 
 test('should ignore unknown preference keys', async () => {
-  const res = await request(app).get('/prefs?__proto__[admin]=true&admin=true');
+  const res = await request(app).get('/prefs?constructor[prototype][admin]=true');
 
   expect(res.status).toBe(200);
   expect(res.body).toEqual({ theme: 'light', lang: 'fr' });
+  expect({}.admin).toBeUndefined();
 });

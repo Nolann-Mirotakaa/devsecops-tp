@@ -1,26 +1,45 @@
-const express = require('express');
-const { exec } = require('child_process');
+﻿const express = require('express');
+const { execFile } = require('child_process');
 const _ = require('lodash');
 
 const app = express();
+const hostnamePattern = /^(?=.{1,253}$)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)(?:\.(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?))*$/;
+
+app.set('query parser', 'extended');
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[character]);
+}
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 app.get('/hello', (req, res) => {
   const name = req.query.name || 'inconnu';
-  res.send(`<h1>Bonjour ${name}</h1>`);
+  res.send(`<h1>Bonjour ${escapeHtml(name)}</h1>`);
 });
 
 app.get('/ping', (req, res) => {
-  exec(`ping -c 1 ${req.query.host}`, (err, stdout) => {
-    if (err) return res.status(500).send('Erreur');
+  const host = req.query.host;
+  if (typeof host !== 'string' || !hostnamePattern.test(host)) {
+    return res.status(400).send('Hôte invalide');
+  }
+
+  execFile('ping', ['-c', '1', host], (err, stdout) => {
+    if (err) return res.status(502).send('Erreur');
     res.type('text').send(stdout);
   });
 });
 
 app.get('/prefs', (req, res) => {
   const defaults = { theme: 'light', lang: 'fr' };
-  res.json(_.merge({}, defaults, req.query));
+  const allowedPreferences = _.pick(req.query, ['theme', 'lang']);
+  res.json({ ...defaults, ...allowedPreferences });
 });
 
 module.exports = app;
